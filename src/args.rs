@@ -1,3 +1,5 @@
+use std::default;
+
 use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
@@ -14,11 +16,12 @@ pub struct Cli {
     pub command: Commands,
 }
 
-#[non_exhaustive]
+
 #[derive(Debug, Subcommand)]
+#[non_exhaustive]
 pub enum Commands {
     #[command(subcommand)]
-    ChangeBrightness(ChangeBrightnessCommand)
+    ChangeBrightness(DeviceSelector, ChangeBrightnessCommand)
 }
 
 #[derive(Debug, Subcommand)]
@@ -35,6 +38,13 @@ pub enum ChangeBrightnessCommand {
     Max,
     /// Set mininum brightness level
     Min,
+}
+
+#[derive(Default, Subcommand)]
+pub enum DeviceSelector {
+    #[default]
+    All,
+    Single(String),
 }
 
 #[derive(Debug, Parser)]

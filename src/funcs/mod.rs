@@ -1,5 +1,5 @@
-use crate::args::ChangeBrightnessCommand;
-use futures::stream::BoxStream;
+use crate::args::{ChangeBrightnessCommand, DeviceSelector};
+use futures::{stream::BoxStream, StreamExt};
 use brightness::{Brightness, BrightnessDevice};
 use colored::*;
 use futures::TryStreamExt;
@@ -7,7 +7,8 @@ use futures::TryStreamExt;
 const MAX_BRIGHTNESS: u32 = 100;
 const MIN_BRIGHTNESS: u32 = 5;
 
-pub async fn change_brightness(command: &ChangeBrightnessCommand, quiet: bool, percent: bool) -> Result<(), brightness::Error> {
+pub async fn change_brightness(selector: &DeviceSelector, command: &ChangeBrightnessCommand, quiet: bool, percent: bool) -> Result<(), brightness::Error> {
+
     match command {
         ChangeBrightnessCommand::Get => {},
         ChangeBrightnessCommand::Set(percent) => set_brightness(Box::pin(brightness::brightness_devices()), &percent.value).await?,
@@ -19,9 +20,21 @@ pub async fn change_brightness(command: &ChangeBrightnessCommand, quiet: bool, p
     print_brightness(Box::pin(brightness::brightness_devices()), quiet, percent).await
 }
 
+fn get_devices(device_selector: &DeviceSelector) -> impl Stream<Item = Result<BrightnessDevice, Error>> {
+    match device_selector {
+        DeviceSelector::All => brightness::brightness_devices(),
+        DeviceSelector::Single(name) => brightness::brightness_devices()
+            .try_filter(|device| 
+                device.device_name()
+                .await
+                .is_ok_and(|devname| devname == name
+                )
+            )
+    }
+}
+
 pub async fn set_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, percentage: &u32) -> Result<(), brightness::Error> {
-    brightness::brightness_devices()
-        .try_for_each(|mut device| async move {
+    devices.try_for_each(|mut device| async move {
             let mut new_level: u32 = *percentage;
             if new_level < MIN_BRIGHTNESS {
                 new_level = MIN_BRIGHTNESS
