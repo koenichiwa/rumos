@@ -8,7 +8,7 @@ const MAX_BRIGHTNESS: u32 = 100;
 const MIN_BRIGHTNESS: u32 = 5;
 
 pub async fn change_brightness(cli: Cli) -> Result<(), brightness::Error> {
-    match cli.command {
+    match &cli.command {
         Commands::Get => {},
         Commands::Set(args) => set_brightness(Box::pin(brightness::brightness_devices()), &args.percent).await?,
         Commands::Inc(args) => increase_brightness(Box::pin(brightness::brightness_devices()), &args.percent).await?,
@@ -16,7 +16,7 @@ pub async fn change_brightness(cli: Cli) -> Result<(), brightness::Error> {
         Commands::Max => set_brightness(Box::pin(brightness::brightness_devices()), &MAX_BRIGHTNESS).await?,
         Commands::Min => set_brightness(Box::pin(brightness::brightness_devices()), &MIN_BRIGHTNESS).await?,
     }
-    print_brightness(Box::pin(brightness::brightness_devices()), cli).await
+    print_brightness(Box::pin(brightness::brightness_devices()), &cli.quiet, &cli.percent).await
 }
 
 pub async fn set_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, percentage: &u32) -> Result<(), brightness::Error> {
@@ -57,10 +57,10 @@ pub async fn decrease_brightness(devices: BoxStream<'_, Result<BrightnessDevice,
     Ok(())
 }
 
-pub async fn print_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, cli: Cli) -> Result<(), brightness::Error> {
+pub async fn print_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, quiet: bool, percent: bool) -> Result<(), brightness::Error> {
     devices.try_for_each(|device| async move {
             let (name, brightness) = (device.device_name().await?, device.get().await?);
-            if !cli.quiet && !cli.percent {
+            if !quiet && !percent {
                 if brightness >= 100 {
                     println!(
                         "{} brightness level reached ({})",
@@ -78,10 +78,10 @@ pub async fn print_brightness(devices: BoxStream<'_, Result<BrightnessDevice, br
                     return Ok(());
                 }
             }
-            if cli.quiet {
+            if quiet {
                 return Ok(());
             }
-            if cli.percent {
+            if percent {
                 println!("{}", format!("{brightness}%").yellow().bold());
                 return Ok(());
             }
