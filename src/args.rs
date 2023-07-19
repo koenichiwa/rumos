@@ -26,11 +26,11 @@ pub enum ChangeBrightnessCommand {
     /// Get brightness level (in percent)
     Get,
     /// Set brightness level (in percent)
-    Set(SetArgs),
+    Set(Percent),
     /// Increase brightness level (in percent)
-    Inc(SetArgs),
+    Inc(Percent),
     /// Decrease brightness level (in percent)
-    Dec(SetArgs),
+    Dec(Percent),
     /// Set maximum brightness level
     Max,
     /// Set mininum brightness level
@@ -38,7 +38,7 @@ pub enum ChangeBrightnessCommand {
 }
 
 #[derive(Debug, Parser)]
-pub struct SetArgs {
+pub struct Percent (
     #[arg(value_parser = clap::value_parser!(u32).range(0..=100))]
-    pub percent: u32,
-}
+    u32,
+);

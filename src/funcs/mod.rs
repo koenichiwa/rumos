@@ -9,12 +9,12 @@ const MIN_BRIGHTNESS: u32 = 5;
 
 pub async fn change_brightness(command: ChangeBrightnessCommand, quiet: bool, percent: bool) -> Result<(), brightness::Error> {
     match command {
-        Commands::Get => {},
-        Commands::Set(args) => set_brightness(Box::pin(brightness::brightness_devices()), &args.percent).await?,
-        Commands::Inc(args) => increase_brightness(Box::pin(brightness::brightness_devices()), &args.percent).await?,
-        Commands::Dec(args) => decrease_brightness(Box::pin(brightness::brightness_devices()), &args.percent).await?,
-        Commands::Max => set_brightness(Box::pin(brightness::brightness_devices()), &MAX_BRIGHTNESS).await?,
-        Commands::Min => set_brightness(Box::pin(brightness::brightness_devices()), &MIN_BRIGHTNESS).await?,
+        Get => {},
+        Set(percent) => set_brightness(Box::pin(brightness::brightness_devices()), &percent.0).await?,
+        Inc(percent) => increase_brightness(Box::pin(brightness::brightness_devices()), &percent.0).await?,
+        Dec(percent) => decrease_brightness(Box::pin(brightness::brightness_devices()), &percent.0).await?,
+        Max => set_brightness(Box::pin(brightness::brightness_devices()), &MAX_BRIGHTNESS).await?,
+        Min => set_brightness(Box::pin(brightness::brightness_devices()), &MIN_BRIGHTNESS).await?,
     }
     print_brightness(Box::pin(brightness::brightness_devices()), quiet, percent).await
 }
