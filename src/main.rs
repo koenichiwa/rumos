@@ -4,8 +4,6 @@ use futures::executor;
 mod args;
 // Funcs
 mod funcs;
-// Setup
-mod setup;
 
 use crate::args::{Cli, Commands};
 use crate::funcs::change_brightness;
