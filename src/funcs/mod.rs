@@ -22,7 +22,7 @@ pub async fn change_brightness(cli: Cli) -> Result<(), brightness::Error> {
 pub async fn set_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, percentage: &u32) -> Result<(), brightness::Error> {
     brightness::brightness_devices()
         .try_for_each(|mut device| async move {
-            let mut new_level: u32 = percentage;
+            let mut new_level: u32 = *percentage;
             if new_level < MIN_BRIGHTNESS {
                 new_level = MIN_BRIGHTNESS
             } else if new_level > MAX_BRIGHTNESS{
