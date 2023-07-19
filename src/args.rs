@@ -11,7 +11,7 @@ pub struct Cli {
     #[arg(short, long, value_name = "PERCENT")]
     pub percent: bool,
     #[command(subcommand)]
-    pub command: Command,
+    pub command: Commands,
 }
 
 #[non_exhaustive]
