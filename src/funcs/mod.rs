@@ -1,5 +1,5 @@
 use crate::args::{Cli, SetArgs, Commands};
-use futures::Stream;
+use futures::stream::BoxStream;
 use brightness::{Brightness, BrightnessDevice};
 use colored::*;
 use futures::TryStreamExt;
@@ -16,33 +16,31 @@ pub async fn change_brightness(cli: Cli) -> Result<(), brightness::Error> {
         Commands::Max => set_brightness(Box::pin(brightness::brightness_devices()), MAX_BRIGHTNESS).await?,
         Commands::Min => set_brightness(Box::pin(brightness::brightness_devices()), MIN_BRIGHTNESS).await?,
     }
-    print_brightness(&brightness::brightness_devices(), cli)
+    print_brightness(&brightness::brightness_devices(), cli).await
 }
 
 pub async fn set_brightness(devices: BoxStream<Item = Result<BrightnessDevice, brightness::Error>>, percentage: u32) -> Result<(), brightness::Error> {
     brightness::brightness_devices()
         .try_for_each(|mut device| async move {
-            if percentage < 5 {
-                device.set(5).await?;
-            } else {
-                device.set(percentage).await?;
+            if percentage < MIN_BRIGHTNESS {
+                percentage = MIN_BRIGHTNESS
+            } else if percentage > MAX_BRIGHTNESS{
+                percentage = MAX_BRIGHTNESS
             }
-            Ok(())
-        }).await?;
-    Ok(())
+
+            device.set(percentage).await
+        }).await
 }
 
 pub async fn increase_brightness(devices: BoxStream<Item = Result<BrightnessDevice, brightness::Error>>, percentage: u32) -> Result<(), brightness::Error>{
     devices.try_for_each(|mut device| async move {
-        let level = device.get().await?;
-        if level + percentage < MAX_BRIGHTNESS {
-            device.set(level + percentage).await?;
-        } else {
-            device.set(MAX_BRIGHTNESS).await?;
+        let new_level = device.get().await? + percentage;
+        if new_level > MAX_BRIGHTNESS{
+            new_level = MAX_BRIGHTNESS
         }
-        Ok(())
-    }).await?;
-    Ok(())
+
+        device.set(new_level).await
+    }).await
 }
 
 pub async fn decrease_brightness(devices: BoxStream<Item = Result<BrightnessDevice, brightness::Error>>, percentage: u32) -> Result<(), brightness::Error>{
