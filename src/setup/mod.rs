@@ -1,6 +1,6 @@
 pub mod main_mod {
     use crate::args::{Cli, Commands};
-    use crate::funcs;
+    use crate::funcs::change_brightness;
     use brightness::Brightness;
     use clap::Parser;
     use futures::TryStreamExt;

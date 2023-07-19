@@ -10,16 +10,16 @@ const MIN_BRIGHTNESS: u32 = 5;
 pub async fn change_brightness(cli: Cli) -> Result<(), brightness::Error> {
     match cli.command {
         Commands::Get => {},
-        Commands::Set(args) => set_brightness(brightness::brightness_devices(), args.percent).await?,
-        Commands::Inc(args) => increase_brightness(brightness::brightness_devices(), args.percent).await?,
-        Commands::Dec(args) => decrease_brightness(brightness::brightness_devices(), args.percent).await?,
-        Commands::Max => set_brightness(brightness::brightness_devices(), MAX_BRIGHTNESS).await?,
-        Commands::Min => set_brightness(brightness::brightness_devices(), MIN_BRIGHTNESS).await?,
+        Commands::Set(args) => set_brightness(&brightness::brightness_devices(), args.percent).await?,
+        Commands::Inc(args) => increase_brightness(&brightness::brightness_devices(), args.percent).await?,
+        Commands::Dec(args) => decrease_brightness(&brightness::brightness_devices(), args.percent).await?,
+        Commands::Max => set_brightness(&brightness::brightness_devices(), MAX_BRIGHTNESS).await?,
+        Commands::Min => set_brightness(&brightness::brightness_devices(), MIN_BRIGHTNESS).await?,
     }
-    print_brightness(brightness::brightness_devices(), cli)
+    print_brightness(&brightness::brightness_devices(), cli)
 }
 
-pub async fn set_brightness(devices: dyn Stream<Item = Result<BrightnessDevice, brightness::Error>>, percentage: u32) -> Result<(), brightness::Error> {
+pub async fn set_brightness(devices: &mut dyn Stream<Item = Result<BrightnessDevice, brightness::Error>>, percentage: u32) -> Result<(), brightness::Error> {
     brightness::brightness_devices()
         .try_for_each(|mut device| async move {
             if percentage < 5 {
@@ -32,8 +32,8 @@ pub async fn set_brightness(devices: dyn Stream<Item = Result<BrightnessDevice, 
     Ok(())
 }
 
-pub async fn increase_brightness(devices: dyn Stream<Item = Result<BrightnessDevice, brightness::Error>>, percentage: u32) -> Result<(), brightness::Error>{
-    devices.try_for_each(|device| async move {
+pub async fn increase_brightness(devices: &mut dyn Stream<Item = Result<BrightnessDevice, brightness::Error>>, percentage: u32) -> Result<(), brightness::Error>{
+    devices.try_for_each(|mut device| async move {
         let level = device.get().await?;
         if level + percentage < MAX_BRIGHTNESS {
             device.set(level + percentage).await?;
@@ -45,8 +45,8 @@ pub async fn increase_brightness(devices: dyn Stream<Item = Result<BrightnessDev
     Ok(())
 }
 
-pub async fn decrease_brightness(devices: dyn Stream<Item = Result<BrightnessDevice, brightness::Error>>, percentage: u32) -> Result<(), brightness::Error>{
-    devices.try_for_each(|device| async move {
+pub async fn decrease_brightness(devices: &mut dyn Stream<Item = Result<BrightnessDevice, brightness::Error>>, percentage: u32) -> Result<(), brightness::Error>{
+    devices.try_for_each(|mut device| async move {
         let level = device.get().await?;
         if level - percentage < MIN_BRIGHTNESS {
             device.set(level - percentage).await?;
@@ -58,7 +58,7 @@ pub async fn decrease_brightness(devices: dyn Stream<Item = Result<BrightnessDev
     Ok(())
 }
 
-pub async fn print_brightness(devices: dyn Stream<Item = Result<BrightnessDevice, Error>>, cli: Cli) -> Result<(), brightness::Error> {
+pub async fn print_brightness(devices: &dyn Stream<Item = Result<BrightnessDevice, brightness::Error>>, cli: Cli) -> Result<(), brightness::Error> {
     let _ = brightness::brightness_devices()
         .try_for_each(|device| async move {
             let (name, brightness) = (device.device_name().await?, device.get().await?);
@@ -84,7 +84,7 @@ pub async fn print_brightness(devices: dyn Stream<Item = Result<BrightnessDevice
                 return Ok(());
             }
             if cli.percent {
-                println!("{}", format!("{result}%").yellow().bold());
+                println!("{}", format!("{brightness}%").yellow().bold());
                 return Ok(());
             }
             println!(
