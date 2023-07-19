@@ -19,7 +19,7 @@ pub async fn change_brightness(cli: Cli) -> Result<(), brightness::Error> {
     print_brightness(&brightness::brightness_devices(), cli).await
 }
 
-pub async fn set_brightness(devices: BoxStream<Item = Result<BrightnessDevice, brightness::Error>>, percentage: u32) -> Result<(), brightness::Error> {
+pub async fn set_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, percentage: u32) -> Result<(), brightness::Error> {
     brightness::brightness_devices()
         .try_for_each(|mut device| async move {
             if percentage < MIN_BRIGHTNESS {
@@ -32,7 +32,7 @@ pub async fn set_brightness(devices: BoxStream<Item = Result<BrightnessDevice, b
         }).await
 }
 
-pub async fn increase_brightness(devices: BoxStream<Item = Result<BrightnessDevice, brightness::Error>>, percentage: u32) -> Result<(), brightness::Error>{
+pub async fn increase_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, percentage: u32) -> Result<(), brightness::Error>{
     devices.try_for_each(|mut device| async move {
         let new_level = device.get().await? + percentage;
         if new_level > MAX_BRIGHTNESS{
@@ -43,7 +43,7 @@ pub async fn increase_brightness(devices: BoxStream<Item = Result<BrightnessDevi
     }).await
 }
 
-pub async fn decrease_brightness(devices: BoxStream<Item = Result<BrightnessDevice, brightness::Error>>, percentage: u32) -> Result<(), brightness::Error>{
+pub async fn decrease_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, percentage: u32) -> Result<(), brightness::Error>{
     devices.try_for_each(|mut device| async move {
         let level = device.get().await?;
         if level - percentage < MIN_BRIGHTNESS {
@@ -56,7 +56,7 @@ pub async fn decrease_brightness(devices: BoxStream<Item = Result<BrightnessDevi
     Ok(())
 }
 
-pub async fn print_brightness(devices: BoxStream<Item = Result<BrightnessDevice, brightness::Error>>, cli: Cli) -> Result<(), brightness::Error> {
+pub async fn print_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, cli: Cli) -> Result<(), brightness::Error> {
     let _ = brightness::brightness_devices()
         .try_for_each(|device| async move {
             let (name, brightness) = (device.device_name().await?, device.get().await?);
