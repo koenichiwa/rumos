@@ -38,7 +38,7 @@ pub enum ChangeBrightnessCommand {
 }
 
 #[derive(Debug, Parser)]
-pub struct Percent (
+pub struct Percent {
     #[arg(value_parser = clap::value_parser!(u32).range(0..=100))]
-    u32,
-);
+    pub value: u32,
+}
