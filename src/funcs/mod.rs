@@ -1,4 +1,4 @@
-use crate::args::{Cli, SetArgs, Commands};
+use crate::args::ChangeBrightnessCommand;
 use futures::stream::BoxStream;
 use brightness::{Brightness, BrightnessDevice};
 use colored::*;
@@ -7,8 +7,8 @@ use futures::TryStreamExt;
 const MAX_BRIGHTNESS: u32 = 100;
 const MIN_BRIGHTNESS: u32 = 5;
 
-pub async fn change_brightness(cli: Cli) -> Result<(), brightness::Error> {
-    match &cli.command {
+pub async fn change_brightness(command: ChangeBrightnessCommand, quiet: bool, percent: bool) -> Result<(), brightness::Error> {
+    match command {
         Commands::Get => {},
         Commands::Set(args) => set_brightness(Box::pin(brightness::brightness_devices()), &args.percent).await?,
         Commands::Inc(args) => increase_brightness(Box::pin(brightness::brightness_devices()), &args.percent).await?,
@@ -16,7 +16,7 @@ pub async fn change_brightness(cli: Cli) -> Result<(), brightness::Error> {
         Commands::Max => set_brightness(Box::pin(brightness::brightness_devices()), &MAX_BRIGHTNESS).await?,
         Commands::Min => set_brightness(Box::pin(brightness::brightness_devices()), &MIN_BRIGHTNESS).await?,
     }
-    print_brightness(Box::pin(brightness::brightness_devices()), cli.quiet, cli.percent).await
+    print_brightness(Box::pin(brightness::brightness_devices()), quiet, percent).await
 }
 
 pub async fn set_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, percentage: &u32) -> Result<(), brightness::Error> {

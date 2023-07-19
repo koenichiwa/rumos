@@ -6,9 +6,15 @@ mod args;
 mod funcs;
 // Setup
 mod setup;
-//Main
-use setup::main_mod;
+
+use crate::args::{Cli, Commands};
+use crate::funcs::change_brightness;
+use clap::Parser;
 
 fn main() {
-    let _ = executor::block_on(main_mod::main_launch());
+    let cli = Cli::parse();
+    match &cli.command {
+        ChangeBrightness(command) => {executor::block_on(change_brightness(command, cli.quiet, cli.percent));},
+        _ => {},
+    }
 }

@@ -11,11 +11,18 @@ pub struct Cli {
     #[arg(short, long, value_name = "PERCENT")]
     pub percent: bool,
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: Command,
+}
+
+#[non_exhaustive]
+#[derive(Debug, Subcommand)]
+enum Commands {
+    #[command(subcommand)]
+    ChangeBrightness(ChangeBrightnessCommand)
 }
 
 #[derive(Debug, Subcommand)]
-pub enum Commands {
+pub enum ChangeBrightnessCommand {
     /// Get brightness level (in percent)
     Get,
     /// Set brightness level (in percent)
