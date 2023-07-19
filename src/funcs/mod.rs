@@ -16,7 +16,7 @@ pub async fn change_brightness(cli: Cli) -> Result<(), brightness::Error> {
         Commands::Max => set_brightness(Box::pin(brightness::brightness_devices()), &MAX_BRIGHTNESS).await?,
         Commands::Min => set_brightness(Box::pin(brightness::brightness_devices()), &MIN_BRIGHTNESS).await?,
     }
-    print_brightness(Box::pin(brightness::brightness_devices()), &cli.quiet, &cli.percent).await
+    print_brightness(Box::pin(brightness::brightness_devices()), cli.quiet, cli.percent).await
 }
 
 pub async fn set_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, percentage: &u32) -> Result<(), brightness::Error> {
