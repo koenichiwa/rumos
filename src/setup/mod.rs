@@ -7,6 +7,6 @@ pub mod main_mod {
 
     pub async fn main_launch() -> Result<(), brightness::Error> {
         let cli = Cli::parse();
-        change_brightness(cli).await?
+        change_brightness(cli).await
     }
 }

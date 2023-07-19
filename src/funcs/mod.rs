@@ -10,11 +10,11 @@ const MIN_BRIGHTNESS: u32 = 5;
 pub async fn change_brightness(cli: Cli) -> Result<(), brightness::Error> {
     match cli.command {
         Commands::Get => {},
-        Commands::Set(args) => set_brightness(&brightness::brightness_devices(), args.percent).await?,
-        Commands::Inc(args) => increase_brightness(&brightness::brightness_devices(), args.percent).await?,
-        Commands::Dec(args) => decrease_brightness(&brightness::brightness_devices(), args.percent).await?,
-        Commands::Max => set_brightness(&brightness::brightness_devices(), MAX_BRIGHTNESS).await?,
-        Commands::Min => set_brightness(&brightness::brightness_devices(), MIN_BRIGHTNESS).await?,
+        Commands::Set(args) => set_brightness(&mut brightness::brightness_devices(), args.percent).await?,
+        Commands::Inc(args) => increase_brightness(&mut brightness::brightness_devices(), args.percent).await?,
+        Commands::Dec(args) => decrease_brightness(&mut brightness::brightness_devices(), args.percent).await?,
+        Commands::Max => set_brightness(&mut brightness::brightness_devices(), MAX_BRIGHTNESS).await?,
+        Commands::Min => set_brightness(&mut brightness::brightness_devices(), MIN_BRIGHTNESS).await?,
     }
     print_brightness(&brightness::brightness_devices(), cli)
 }
