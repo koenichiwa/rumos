@@ -1,5 +1,6 @@
 use crate::args::{Cli, SetArgs, Commands};
-use brightness::Brightness;
+use futures::Stream;
+use brightness::{Brightness, BrightnessDevice};
 use colored::*;
 use futures::TryStreamExt;
 
@@ -10,15 +11,15 @@ pub async fn change_brightness(cli: Cli) -> Result<(), brightness::Error> {
     match cli.command {
         Commands::Get => {},
         Commands::Set(args) => set_brightness(brightness::brightness_devices(), args.percent).await?,
-        Commands::Inc(_) => increase_brightness(brightness::brightness_devices(), args.percent).await?,
-        Commands::Dec(_) => decrease_brightness(brightness::brightness_devices(), args.percent).await?,
+        Commands::Inc(args) => increase_brightness(brightness::brightness_devices(), args.percent).await?,
+        Commands::Dec(args) => decrease_brightness(brightness::brightness_devices(), args.percent).await?,
         Commands::Max => set_brightness(brightness::brightness_devices(), MAX_BRIGHTNESS).await?,
         Commands::Min => set_brightness(brightness::brightness_devices(), MIN_BRIGHTNESS).await?,
     }
     print_brightness(brightness::brightness_devices(), cli)
 }
 
-pub async fn set_brightness(devices: dyn Stream<Item = Result<BrightnessDevice, Error>>, percentage: u32) -> Result<(), brightness::Error> {
+pub async fn set_brightness(devices: dyn Stream<Item = Result<BrightnessDevice, brightness::Error>>, percentage: u32) -> Result<(), brightness::Error> {
     brightness::brightness_devices()
         .try_for_each(|mut device| async move {
             if percentage < 5 {
@@ -31,26 +32,26 @@ pub async fn set_brightness(devices: dyn Stream<Item = Result<BrightnessDevice, 
     Ok(())
 }
 
-pub async fn increase_brightness(devices: dyn Stream<Item = Result<BrightnessDevice, Error>>, percentage: u32) -> Result<(), brightness::Error>{
+pub async fn increase_brightness(devices: dyn Stream<Item = Result<BrightnessDevice, brightness::Error>>, percentage: u32) -> Result<(), brightness::Error>{
     devices.try_for_each(|device| async move {
         let level = device.get().await?;
         if level + percentage < MAX_BRIGHTNESS {
-            dev.set(level + percentage).await?;
+            device.set(level + percentage).await?;
         } else {
-            dev.set(MAX_BRIGHTNESS).await?;
+            device.set(MAX_BRIGHTNESS).await?;
         }
         Ok(())
     }).await?;
     Ok(())
 }
 
-pub async fn decrease_brightness(devices: dyn Stream<Item = Result<BrightnessDevice, Error>>, percentage: u32) -> Result<(), brightness::Error>{
+pub async fn decrease_brightness(devices: dyn Stream<Item = Result<BrightnessDevice, brightness::Error>>, percentage: u32) -> Result<(), brightness::Error>{
     devices.try_for_each(|device| async move {
         let level = device.get().await?;
         if level - percentage < MIN_BRIGHTNESS {
-            dev.set(level - percentage).await?;
+            device.set(level - percentage).await?;
         } else {
-            dev.set(MIN_BRIGHTNESS).await?;
+            device.set(MIN_BRIGHTNESS).await?;
         }
         Ok(())
     }).await?;
@@ -59,10 +60,10 @@ pub async fn decrease_brightness(devices: dyn Stream<Item = Result<BrightnessDev
 
 pub async fn print_brightness(devices: dyn Stream<Item = Result<BrightnessDevice, Error>>, cli: Cli) -> Result<(), brightness::Error> {
     let _ = brightness::brightness_devices()
-        .try_for_each(|dev| async move {
-            let (device, result) = (dev.device_name().await?, dev.get().await?);
+        .try_for_each(|device| async move {
+            let (name, brightness) = (device.device_name().await?, device.get().await?);
             if !cli.quiet && !cli.percent {
-                if result >= 100 {
+                if brightness >= 100 {
                     println!(
                         "{} brightness level reached ({})",
                         "Maximum".green().bold(),
@@ -70,7 +71,7 @@ pub async fn print_brightness(devices: dyn Stream<Item = Result<BrightnessDevice
                     );
                     return Ok(());
                 }
-                if result <= 5 {
+                if brightness <= 5 {
                     println!(
                         "{} brightness level reached ({})",
                         "Minimum".red().bold(),
@@ -88,8 +89,8 @@ pub async fn print_brightness(devices: dyn Stream<Item = Result<BrightnessDevice
             }
             println!(
                 "Brightness of device {} is {}",
-                device.blue().bold(),
-                format!("{result}%").yellow().bold()
+                name.blue().bold(),
+                format!("{brightness}%").yellow().bold()
             );
             Ok(())
         })
