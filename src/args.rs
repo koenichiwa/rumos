@@ -16,7 +16,7 @@ pub struct Cli {
 
 #[non_exhaustive]
 #[derive(Debug, Subcommand)]
-enum Commands {
+pub enum Commands {
     #[command(subcommand)]
     ChangeBrightness(ChangeBrightnessCommand)
 }
