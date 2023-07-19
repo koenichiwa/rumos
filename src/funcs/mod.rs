@@ -7,7 +7,7 @@ use futures::TryStreamExt;
 const MAX_BRIGHTNESS: u32 = 100;
 const MIN_BRIGHTNESS: u32 = 5;
 
-pub async fn change_brightness(command: ChangeBrightnessCommand, quiet: bool, percent: bool) -> Result<(), brightness::Error> {
+pub async fn change_brightness(command: &ChangeBrightnessCommand, quiet: bool, percent: bool) -> Result<(), brightness::Error> {
     match command {
         ChangeBrightnessCommand::Get => {},
         ChangeBrightnessCommand::Set(percent) => set_brightness(Box::pin(brightness::brightness_devices()), &percent.value).await?,
