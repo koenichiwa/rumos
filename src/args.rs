@@ -19,7 +19,7 @@ pub struct Cli {
 }
 
 
-#[derive(Debug, Subcommand, Parser)]
+#[derive(Debug, Subcommand)]
 pub enum ClapCommands {
     /// Get brightness level (in percent)
     Get { 

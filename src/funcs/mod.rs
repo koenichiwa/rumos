@@ -29,8 +29,8 @@ impl Command {
                     BrightnessCommand::Set{percent} => Self::set_brightness(devices, percent).await?,
                     BrightnessCommand::Inc{percent} => Self::increase_brightness(devices, percent).await?,
                     BrightnessCommand::Dec{percent} => Self::decrease_brightness(devices, percent).await?,
-                    BrightnessCommand::Max => set_brightness(devices, &MAX_BRIGHTNESS).await?,
-                    BrightnessCommand::Min => set_brightness(devices, &MIN_BRIGHTNESS).await?,
+                    BrightnessCommand::Max => Self::set_brightness(devices, &MAX_BRIGHTNESS).await?,
+                    BrightnessCommand::Min => Self::set_brightness(devices, &MIN_BRIGHTNESS).await?,
                 }
 
                 if quiet {
