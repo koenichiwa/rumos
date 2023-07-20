@@ -1,14 +1,12 @@
-use args::ClapCommands;
-// Executor
-use futures::executor;
-// Args
 mod args;
-// Funcs
 mod funcs;
 
-use crate::args::{Cli, Commands};
-use crate::funcs::change_brightness;
-use clap::{Parser, App};
+use futures::executor;
+use clap::Parser;
+
+use crate::args::{Cli, ClapCommands};
+use crate::funcs::Command;
+
 
 const MAX_BRIGHTNESS: u32 = 100;
 const MIN_BRIGHTNESS: u32 = 5;

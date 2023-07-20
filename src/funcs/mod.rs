@@ -39,20 +39,21 @@ impl Command {
         }
     }
 
-    fn get_devices(selector: &DeviceSelector) -> BoxStream<Result<BrightnessDevice, brightness::Error>> {
-        match selector {
-            DeviceSelector::All => brightness::brightness_devices().boxed(),
-            DeviceSelector::ByName(names) => brightness::brightness_devices()
+    fn get_devices(devices: &Vec<String>) -> BoxStream<Result<BrightnessDevice, brightness::Error>> {
+        if devices.len() == 0 {
+            brightness::brightness_devices().boxed()
+        } else {
+            brightness::brightness_devices()
                 .try_filter(|device| async {
                     device.device_name()
                     .await
                     .is_ok_and(|devname| names.iter().any(|name|devname == *name))
-                }
-            ).boxed()
+                })
+                .boxed()
         }
     }
     
-    async fn set_brightness(devices: BoxStream<Result<BrightnessDevice, brightness::Error>>, percentage: &u32) -> Result<(), brightness::Error> {
+    async fn set_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, percentage: &u32) -> Result<(), brightness::Error> {
         devices.try_for_each(|mut device| async move {
                 let mut new_level: u32 = *percentage;
                 if new_level < MIN_BRIGHTNESS {
@@ -76,7 +77,7 @@ impl Command {
         }).await
     }
     
-    async fn decrease_brightness(devices: BoxStream<Result<BrightnessDevice, brightness::Error>>, percentage: &u32) -> Result<(), brightness::Error>{
+    async fn decrease_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, percentage: &u32) -> Result<(), brightness::Error>{
         devices.try_for_each(|mut device| async move {
             let mut new_level = device.get().await?.saturating_sub(percentage);
             if new_level < MIN_BRIGHTNESS{
@@ -88,33 +89,33 @@ impl Command {
         Ok(())
     }
     
-    async fn print_brightness(devices: BoxStream<Result<BrightnessDevice, brightness::Error>>, percent: bool) -> Result<(), brightness::Error> {
+    async fn print_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, percent: bool) -> Result<(), brightness::Error> {
         devices.try_for_each(|device| async move {
                 let (name, brightness) = (device.device_name().await?, device.get().await?);
                 if percent {
                     println!("{}", format!("{brightness}%").yellow().bold());
                 } else {
-                    let name_str = format!("Brightness of device {}:" name.blue().bold());
+                    let name_str = format!("Brightness of device {}:", name.blue().bold());
                     let brightness_str = format!("{}%", brightness).bold();
                     if brightness >= MAX_BRIGHTNESS {
                         println!(
                             "{} {} {} brightness level reached",
-                            name_str
-                            brightness_str.green()
+                            name_str,
+                            brightness_str.green(),
                             "Maximum".green().bold(),
                         )
                     } else if brightness <= MIN_BRIGHTNESS {
                         println!(
                             "{} {} {} brightness level reached",
-                            name_str
-                            brightness_str.green().red()
+                            name_str,
+                            brightness_str.green().red(),
                             "Minimum".red().bold(),
                         )
                     } else {
                         println!(
                             "{} {}",
                             name_str,
-                            brightness_str.yellow()
+                            brightness_str.yellow(),
                         )
                     }
                 }

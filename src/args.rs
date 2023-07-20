@@ -1,5 +1,4 @@
 use crate::{MIN_BRIGHTNESS, MAX_BRIGHTNESS};
-use std::default;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
@@ -15,6 +14,7 @@ pub struct Cli {
     #[command(subcommand)]
     pub command: ClapCommands,
     #[arg(short, long, value_name = "DEVICES")] 
+    /// Names of devices that should be changed
     pub devices: Vec<String>
 }
 
