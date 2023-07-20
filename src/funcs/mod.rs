@@ -23,12 +23,11 @@ pub async fn change_brightness(selector: &DeviceSelector, command: &ChangeBright
 async fn get_devices(device_selector: &DeviceSelector) -> impl Stream<Item = Result<BrightnessDevice, brightness::Error>> {
     match device_selector {
         DeviceSelector::All => brightness::brightness_devices(),
-        DeviceSelector::Single(name) => brightness::brightness_devices()
+        DeviceSelector::ByName(names) => brightness::brightness_devices()
             .try_filter(|device| 
                 device.device_name()
                 .await
-                .is_ok_and(|devname| devname == name
-                )
+                .is_ok_and(|devname| names.iter().any(|name|devname == name))
             )
     }
 }
