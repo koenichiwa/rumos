@@ -20,8 +20,7 @@ pub struct Cli {
 #[derive(Debug, Subcommand)]
 #[non_exhaustive]
 pub enum Commands {
-    #[command(subcommand)]
-    ChangeBrightness(DeviceSelector, ChangeBrightnessCommand)
+    ChangeBrightness{ #[command(subcommand)] command: ChangeBrightnessCommand, selector: DeviceSelector }
 }
 
 #[derive(Debug, Subcommand)]
@@ -44,7 +43,7 @@ pub enum ChangeBrightnessCommand {
 pub enum DeviceSelector {
     #[default]
     All,
-    Single(String),
+    ByName(Vec<String>),
 }
 
 #[derive(Debug, Parser)]

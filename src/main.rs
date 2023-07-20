@@ -12,7 +12,7 @@ use clap::Parser;
 fn main() -> Result<(), brightness::Error> {
     let cli = Cli::parse();
     match &cli.command {
-        Commands::ChangeBrightness(selector, command) => 
+        Commands::ChangeBrightness{command, selector} => 
             executor::block_on(change_brightness(selector, command, cli.quiet, cli.percent)),
         _ => Ok(()),
     }
