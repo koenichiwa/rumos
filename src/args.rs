@@ -1,13 +1,13 @@
 use std::default;
 
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 #[command(propagate_version = true)]
 pub struct Cli {
     /// Do not output result to console
-    #[arg(short, long, value_name = "QUET")]
+    #[arg(short, long, value_name = "QUIET")]
     pub quiet: bool,
     /// Print only brightness level(percentage)
     #[arg(short, long, value_name = "PERCENT")]
@@ -17,10 +17,10 @@ pub struct Cli {
 }
 
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Subcommand, Parser)]
 #[non_exhaustive]
 pub enum Commands {
-    ChangeBrightness{ #[command(subcommand)] command: ChangeBrightnessCommand, selector: DeviceSelector }
+    ChangeBrightness{ #[command(flatten)] command: ChangeBrightnessCommand, #[arg(short, long, value_name = "DEVICES")] selector: DeviceSelector }
 }
 
 #[derive(Debug, Subcommand)]
@@ -39,11 +39,11 @@ pub enum ChangeBrightnessCommand {
     Min,
 }
 
-#[derive(Default, Debug, Subcommand, Clone)]
+#[derive(Default, Debug, ValueEnum, Clone)]
 pub enum DeviceSelector {
     #[default]
     All,
-    ByName(Vec<String>),
+    ByName(#[arg(multiple=true)] Vec<String>),
 }
 
 #[derive(Debug, Parser)]
