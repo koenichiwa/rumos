@@ -8,7 +8,7 @@ const MAX_BRIGHTNESS: u32 = 100;
 const MIN_BRIGHTNESS: u32 = 5;
 
 pub async fn change_brightness(selector: &DeviceSelector, command: &ChangeBrightnessCommand, quiet: bool, percent: bool) -> Result<(), brightness::Error> {
-    let devices = Box::pin(get_devices(device_selector));
+    let devices = Box::pin(get_devices(selector)).await;
     match command {
         ChangeBrightnessCommand::Get => {},
         ChangeBrightnessCommand::Set(percent) => set_brightness(devices, &percent.value).await?,
@@ -17,18 +17,19 @@ pub async fn change_brightness(selector: &DeviceSelector, command: &ChangeBright
         ChangeBrightnessCommand::Max => set_brightness(devices, &MAX_BRIGHTNESS).await?,
         ChangeBrightnessCommand::Min => set_brightness(devices, &MIN_BRIGHTNESS).await?,
     }
-    print_brightness(Box::pin(get_devices(device_selector)), quiet, percent).await
+    print_brightness(Box::pin(get_devices(selector)).await, quiet, percent).await
 }
 
-async fn get_devices(device_selector: &DeviceSelector) -> impl Stream<Item = Result<BrightnessDevice, brightness::Error>> {
-    match device_selector {
+async fn get_devices(selector: &DeviceSelector) -> impl Stream<Item = Result<BrightnessDevice, brightness::Error>> {
+    match selector {
         DeviceSelector::All => brightness::brightness_devices(),
         DeviceSelector::ByName(names) => brightness::brightness_devices()
-            .try_filter(|device| 
+            .try_filter(|device| async {
                 device.device_name()
                 .await
-                .is_ok_and(|devname| names.iter().any(|name|devname == name))
-            )
+                .is_ok_and(|devname| names.iter().any(|name|devname == *name))
+            }
+        )
     }
 }
 
@@ -73,7 +74,7 @@ pub async fn print_brightness(devices: BoxStream<'_, Result<BrightnessDevice, br
     devices.try_for_each(|device| async move {
             let (name, brightness) = (device.device_name().await?, device.get().await?);
             if !quiet && !percent {
-                if brightness >= 100 {
+                if brightness >= MAX_BRIGHTNESS {
                     println!(
                         "{} brightness level reached ({})",
                         "Maximum".green().bold(),
@@ -81,7 +82,7 @@ pub async fn print_brightness(devices: BoxStream<'_, Result<BrightnessDevice, br
                     );
                     return Ok(());
                 }
-                if brightness <= 5 {
+                if brightness <= MIN_BRIGHTNESS {
                     println!(
                         "{} brightness level reached ({})",
                         "Minimum".red().bold(),
