@@ -8,7 +8,7 @@ const MAX_BRIGHTNESS: u32 = 100;
 const MIN_BRIGHTNESS: u32 = 5;
 
 pub async fn change_brightness(selector: &DeviceSelector, command: &ChangeBrightnessCommand, quiet: bool, percent: bool) -> Result<(), brightness::Error> {
-    let devices = Box::pin(get_devices(selector));
+    let devices = get_devices(selector);
     match command {
         ChangeBrightnessCommand::Get => {},
         ChangeBrightnessCommand::Set(percent) => set_brightness(devices, &percent.value).await?,
@@ -17,19 +17,19 @@ pub async fn change_brightness(selector: &DeviceSelector, command: &ChangeBright
         ChangeBrightnessCommand::Max => set_brightness(devices, &MAX_BRIGHTNESS).await?,
         ChangeBrightnessCommand::Min => set_brightness(devices, &MIN_BRIGHTNESS).await?,
     }
-    print_brightness(Box::pin(get_devices(selector)), quiet, percent).await
+    print_brightness(get_devices(selector), quiet, percent).await
 }
 
-fn get_devices(selector: &DeviceSelector) -> impl Stream<Item = Result<BrightnessDevice, brightness::Error>> {
+fn get_devices(selector: &DeviceSelector) -> BoxStream<Result<BrightnessDevice, brightness::Error>> {
     match selector {
-        DeviceSelector::All => brightness::brightness_devices(),
+        DeviceSelector::All => brightness::brightness_devices().boxed(),
         DeviceSelector::ByName(names) => brightness::brightness_devices()
             .try_filter(|device| async {
                 device.device_name()
                 .await
                 .is_ok_and(|devname| names.iter().any(|name|devname == *name))
             }
-        ).into_stream()
+        ).boxed()
     }
 }
 
