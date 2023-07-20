@@ -1,5 +1,5 @@
 use crate::args::{ChangeBrightnessCommand, DeviceSelector};
-use futures::{stream::BoxStream, StreamExt};
+use futures::{Stream, stream::BoxStream, StreamExt};
 use brightness::{Brightness, BrightnessDevice};
 use colored::*;
 use futures::TryStreamExt;
@@ -8,19 +8,19 @@ const MAX_BRIGHTNESS: u32 = 100;
 const MIN_BRIGHTNESS: u32 = 5;
 
 pub async fn change_brightness(selector: &DeviceSelector, command: &ChangeBrightnessCommand, quiet: bool, percent: bool) -> Result<(), brightness::Error> {
-
+    let devices = Box::pin(get_devices(device_selector));
     match command {
         ChangeBrightnessCommand::Get => {},
-        ChangeBrightnessCommand::Set(percent) => set_brightness(Box::pin(brightness::brightness_devices()), &percent.value).await?,
-        ChangeBrightnessCommand::Inc(percent) => increase_brightness(Box::pin(brightness::brightness_devices()), &percent.value).await?,
-        ChangeBrightnessCommand::Dec(percent) => decrease_brightness(Box::pin(brightness::brightness_devices()), &percent.value).await?,
-        ChangeBrightnessCommand::Max => set_brightness(Box::pin(brightness::brightness_devices()), &MAX_BRIGHTNESS).await?,
-        ChangeBrightnessCommand::Min => set_brightness(Box::pin(brightness::brightness_devices()), &MIN_BRIGHTNESS).await?,
+        ChangeBrightnessCommand::Set(percent) => set_brightness(devices, &percent.value).await?,
+        ChangeBrightnessCommand::Inc(percent) => increase_brightness(devices, &percent.value).await?,
+        ChangeBrightnessCommand::Dec(percent) => decrease_brightness(devices, &percent.value).await?,
+        ChangeBrightnessCommand::Max => set_brightness(devices, &MAX_BRIGHTNESS).await?,
+        ChangeBrightnessCommand::Min => set_brightness(devices, &MIN_BRIGHTNESS).await?,
     }
-    print_brightness(Box::pin(brightness::brightness_devices()), quiet, percent).await
+    print_brightness(Box::pin(get_devices(device_selector)), quiet, percent).await
 }
 
-fn get_devices(device_selector: &DeviceSelector) -> impl Stream<Item = Result<BrightnessDevice, Error>> {
+async fn get_devices(device_selector: &DeviceSelector) -> impl Stream<Item = Result<BrightnessDevice, brightness::Error>> {
     match device_selector {
         DeviceSelector::All => brightness::brightness_devices(),
         DeviceSelector::Single(name) => brightness::brightness_devices()
