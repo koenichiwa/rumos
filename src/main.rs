@@ -20,6 +20,7 @@ impl From<ClapCommands> for Command {
             ClapCommands::Dec { percent, devices } => Command::BrightnessCommand { command: BrightnessCommand::Dec { percent }, devices },
             ClapCommands::Max { devices } => Command::BrightnessCommand { command: BrightnessCommand::Max, devices },
             ClapCommands::Min { devices } => Command::BrightnessCommand { command: BrightnessCommand::Min, devices },
+            ClapCommands::List => Command::List
         }
     }
 }

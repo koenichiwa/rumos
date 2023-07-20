@@ -57,6 +57,7 @@ pub enum ClapCommands {
         #[arg(short, long)]
         devices: Vec<String>,
     },
+    List,
 }
 
 

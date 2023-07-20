@@ -7,7 +7,8 @@ use colored::*;
 use futures::TryStreamExt;
 
 pub enum Command {
-    BrightnessCommand{ command: BrightnessCommand, devices: Vec<String> }
+    BrightnessCommand{ command: BrightnessCommand, devices: Vec<String> },
+    List
 }
 
 pub enum BrightnessCommand {
@@ -38,7 +39,8 @@ impl Command {
                 } else {
                     Self::print_brightness(Self::get_devices(device_names), only_percent).await
                 }
-            }
+            },
+            Command::List => todo!(),
         }
     }
 
@@ -47,7 +49,7 @@ impl Command {
             brightness::brightness_devices().boxed()
         } else {
             brightness::brightness_devices()
-                .try_filter(|device| async {
+                .try_filter(|device| async move {
                     device.device_name()
                     .await
                     .is_ok_and(|devname| device_names.iter().any(|name|devname == *name))
@@ -123,4 +125,11 @@ impl Command {
             .await;
         Ok(())
     }
+
+    // async fn print_device_names() -> Result<(), brightness::Error> {
+    //     Self::get_devices(Vec<String>::default()).try_for_each(|device| async {
+    //         println!("{}", device.device_name().await?.blue().bold());
+    //         Ok(())
+    //     })
+    // }
 }
