@@ -28,21 +28,20 @@ pub enum ClapCommands {
     },
     /// Set brightness level (in percent)
     Set { 
-        #[arg(value_parser = clap::value_parser!(u32).range(MIN_BRIGHTNESS..=MAX_BRIGHTNESS))] 
-        percent: u32,
+        #[arg(value_parser = clap::value_parser!(u32).range(MIN_BRIGHTNESS as i64..=MAX_BRIGHTNESS as i64))] 
         #[arg(short, long)]
         devices: Vec<String>,
     },
     /// Increase brightness level (in percent)
     Inc { 
-        #[arg(value_parser = clap::value_parser!(u32).range(0..=100))] 
+        #[arg(value_parser = clap::value_parser!(u32).range(MIN_BRIGHTNESS as i64..=MAX_BRIGHTNESS as i64))] 
         percent: u32,
         #[arg(short, long)]
         devices: Vec<String>,
     },
     /// Decrease brightness level (in percent)
     Dec { 
-        #[arg(value_parser = clap::value_parser!(u32).range(0..=100))] 
+        #[arg(value_parser = clap::value_parser!(u32).range(MIN_BRIGHTNESS as i64..=MAX_BRIGHTNESS as i64))] 
         percent: u32,
         #[arg(short, long)]
         devices: Vec<String>,

@@ -55,39 +55,35 @@ impl Command {
                 .boxed()
         }
     }
+
+    async fn set_single_brightness(mut device: BrightnessDevice, percentage: u32) -> Result<(), brightness::Error> {
+        let mut new_level: u32 = *percentage;
+        if new_level < MIN_BRIGHTNESS {
+            new_level = MIN_BRIGHTNESS
+        } else if new_level > MAX_BRIGHTNESS{
+            new_level = MAX_BRIGHTNESS
+        }
+
+        device.set(new_level).await
+    }
     
     async fn set_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, percentage: &u32) -> Result<(), brightness::Error> {
         devices.try_for_each(|mut device| async move {
-                let mut new_level: u32 = *percentage;
-                if new_level < MIN_BRIGHTNESS {
-                    new_level = MIN_BRIGHTNESS
-                } else if new_level > MAX_BRIGHTNESS{
-                    new_level = MAX_BRIGHTNESS
-                }
-    
-                device.set(new_level).await
+                set_single_brightness(device, *percentage)
             }).await
     }
     
     async fn increase_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, percentage: &u32) -> Result<(), brightness::Error>{
         devices.try_for_each(|mut device| async move {
-            let mut new_level = device.get().await?.saturating_add(percentage);
-            if new_level > MAX_BRIGHTNESS{
-                new_level = MAX_BRIGHTNESS
-            }
-    
-            device.set(new_level).await
+            let mut new_level = device.get().await?.saturating_add(*percentage);
+            set_single_brightness(device, new_level)
         }).await
     }
     
     async fn decrease_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, percentage: &u32) -> Result<(), brightness::Error>{
         devices.try_for_each(|mut device| async move {
-            let mut new_level = device.get().await?.saturating_sub(percentage);
-            if new_level < MIN_BRIGHTNESS{
-                new_level = MIN_BRIGHTNESS
-            }
-    
-            device.set(new_level).await
+            let mut new_level = device.get().await?.saturating_sub(*percentage);
+            set_single_brightness(device, new_level)
         }).await?;
         Ok(())
     }
