@@ -1,53 +1,62 @@
+use crate::{MIN_BRIGHTNESS, MAX_BRIGHTNESS};
 use std::default;
-
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 #[command(propagate_version = true)]
 pub struct Cli {
     /// Do not output result to console
-    #[arg(short, long, value_name = "QUIET")]
+    #[arg(short, long)]
     pub quiet: bool,
     /// Print only brightness level(percentage)
-    #[arg(short, long, value_name = "PERCENT")]
+    #[arg(short, long)]
     pub percent: bool,
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: ClapCommands,
+    #[arg(short, long, value_name = "DEVICES")] 
+    pub devices: Vec<String>
 }
 
 
 #[derive(Debug, Subcommand, Parser)]
-#[non_exhaustive]
-pub enum Commands {
-    ChangeBrightness{ #[command(flatten)] command: ChangeBrightnessCommand, #[arg(short, long, value_name = "DEVICES")] selector: DeviceSelector }
-}
-
-#[derive(Debug, Subcommand)]
-pub enum ChangeBrightnessCommand {
+pub enum ClapCommands {
     /// Get brightness level (in percent)
-    Get,
+    Get { 
+        #[arg(short, long)]
+        devices: Vec<String>,
+    },
     /// Set brightness level (in percent)
-    Set(Percent),
+    Set { 
+        #[arg(value_parser = clap::value_parser!(u32).range(MIN_BRIGHTNESS..=MAX_BRIGHTNESS))] 
+        percent: u32,
+        #[arg(short, long)]
+        devices: Vec<String>,
+    },
     /// Increase brightness level (in percent)
-    Inc(Percent),
+    Inc { 
+        #[arg(value_parser = clap::value_parser!(u32).range(0..=100))] 
+        percent: u32,
+        #[arg(short, long)]
+        devices: Vec<String>,
+    },
     /// Decrease brightness level (in percent)
-    Dec(Percent),
+    Dec { 
+        #[arg(value_parser = clap::value_parser!(u32).range(0..=100))] 
+        percent: u32,
+        #[arg(short, long)]
+        devices: Vec<String>,
+    },
     /// Set maximum brightness level
-    Max,
+    Max { 
+        #[arg(short, long)]
+        devices: Vec<String>,
+    },
     /// Set mininum brightness level
-    Min,
+    Min { 
+        #[arg(short, long)]
+        devices: Vec<String>,
+    },
 }
 
-#[derive(Default, Debug, ValueEnum, Clone)]
-pub enum DeviceSelector {
-    #[default]
-    All,
-    ByName(#[arg(multiple=true)] Vec<String>),
-}
 
-#[derive(Debug, Parser)]
-pub struct Percent {
-    #[arg(value_parser = clap::value_parser!(u32).range(0..=100))]
-    pub value: u32,
-}
