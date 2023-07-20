@@ -33,7 +33,7 @@ fn get_devices(selector: &DeviceSelector) -> BoxStream<Result<BrightnessDevice, 
     }
 }
 
-pub async fn set_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, percentage: &u32) -> Result<(), brightness::Error> {
+pub async fn set_brightness(devices: BoxStream<Result<BrightnessDevice, brightness::Error>>, percentage: &u32) -> Result<(), brightness::Error> {
     devices.try_for_each(|mut device| async move {
             let mut new_level: u32 = *percentage;
             if new_level < MIN_BRIGHTNESS {
@@ -48,7 +48,7 @@ pub async fn set_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brig
 
 pub async fn increase_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, percentage: &u32) -> Result<(), brightness::Error>{
     devices.try_for_each(|mut device| async move {
-        let mut new_level = device.get().await? + percentage;
+        let mut new_level = device.get().await?.saturating_add(percentage);
         if new_level > MAX_BRIGHTNESS{
             new_level = MAX_BRIGHTNESS
         }
@@ -57,20 +57,19 @@ pub async fn increase_brightness(devices: BoxStream<'_, Result<BrightnessDevice,
     }).await
 }
 
-pub async fn decrease_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, percentage: &u32) -> Result<(), brightness::Error>{
+pub async fn decrease_brightness(devices: BoxStream<Result<BrightnessDevice, brightness::Error>>, percentage: &u32) -> Result<(), brightness::Error>{
     devices.try_for_each(|mut device| async move {
-        let level = device.get().await?;
-        if level - percentage < MIN_BRIGHTNESS {
-            device.set(level - percentage).await?;
-        } else {
-            device.set(MIN_BRIGHTNESS).await?;
+        let mut new_level = device.get().await?.saturating_sub(percentage);
+        if new_level < MIN_BRIGHTNESS{
+            new_level = MIN_BRIGHTNESS
         }
-        Ok(())
+
+        device.set(new_level).await
     }).await?;
     Ok(())
 }
 
-pub async fn print_brightness(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, quiet: bool, percent: bool) -> Result<(), brightness::Error> {
+pub async fn print_brightness(devices: BoxStream<Result<BrightnessDevice, brightness::Error>>, quiet: bool, percent: bool) -> Result<(), brightness::Error> {
     devices.try_for_each(|device| async move {
             let (name, brightness) = (device.device_name().await?, device.get().await?);
             if !quiet && !percent {
