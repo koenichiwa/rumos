@@ -29,7 +29,7 @@ fn get_devices(selector: &DeviceSelector) -> impl Stream<Item = Result<Brightnes
                 .await
                 .is_ok_and(|devname| names.iter().any(|name|devname == *name))
             }
-        )
+        ).into_stream()
     }
 }
 
