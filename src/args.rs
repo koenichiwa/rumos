@@ -39,7 +39,7 @@ pub enum ChangeBrightnessCommand {
     Min,
 }
 
-#[derive(Default, Subcommand)]
+#[derive(Default, Subcommand, Clone)]
 pub enum DeviceSelector {
     #[default]
     All,
