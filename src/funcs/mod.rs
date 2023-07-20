@@ -126,10 +126,10 @@ impl Command {
         Ok(())
     }
 
-    async fn print_device_names() -> Result<(), brightness::Error> {
-        Self::get_devices(Vec<String>::default()).try_for_each(|device| async {
-            println!("{}", device.device_name().await?.blue().bold());
-            Ok(())
-        })
-    }
+    // async fn print_device_names() -> Result<(), brightness::Error> {
+    //     Self::get_devices(Vec::<String>::default()).try_for_each(|device| async {
+    //         println!("{}", device.device_name().await?.blue().bold());
+    //         Ok(())
+    //     }).await
+    // }
 }
