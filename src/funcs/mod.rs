@@ -49,7 +49,7 @@ impl Command {
             brightness::brightness_devices().boxed()
         } else {
             brightness::brightness_devices()
-                .try_filter(|device| async move {
+                .try_filter(move |device| async move {
                     device.device_name()
                     .await
                     .is_ok_and(|devname| device_names.iter().any(|name|devname == *name))
