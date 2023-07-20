@@ -5,7 +5,7 @@ use futures::executor;
 use clap::Parser;
 
 use crate::args::{Cli, ClapCommands};
-use crate::funcs::Command;
+use crate::funcs::{Command, BrightnessCommand};
 
 
 const MAX_BRIGHTNESS: u32 = 100;

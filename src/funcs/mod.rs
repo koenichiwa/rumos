@@ -23,31 +23,34 @@ impl Command {
     pub async fn handle(&self, quiet: bool, only_percent: bool) -> Result<(), brightness::Error> {
         match self {
             Command::BrightnessCommand { command, devices: device_names} => {
-                let devices = get_devices(device_names);
+                let devices = Self::get_devices(device_names);
                 match command {
                     BrightnessCommand::Get => {},
-                    BrightnessCommand::Set{percent} => set_brightness(devices, percent).await?,
-                    BrightnessCommand::Inc{percent} => increase_brightness(devices, percent).await?,
-                    BrightnessCommand::Dec{percent} => decrease_brightness(devices, percent).await?,
+                    BrightnessCommand::Set{percent} => Self::set_brightness(devices, percent).await?,
+                    BrightnessCommand::Inc{percent} => Self::increase_brightness(devices, percent).await?,
+                    BrightnessCommand::Dec{percent} => Self::decrease_brightness(devices, percent).await?,
                     BrightnessCommand::Max => set_brightness(devices, &MAX_BRIGHTNESS).await?,
                     BrightnessCommand::Min => set_brightness(devices, &MIN_BRIGHTNESS).await?,
                 }
-                if(!quiet) {
-                    print_brightness(get_devices(device_names), percent).await
+
+                if quiet {
+                    Ok(())
+                } else {
+                    Self::print_brightness(Self::get_devices(device_names), only_percent).await
                 }
             }
         }
     }
 
-    fn get_devices(devices: &Vec<String>) -> BoxStream<Result<BrightnessDevice, brightness::Error>> {
-        if devices.len() == 0 {
+    fn get_devices(device_names: &Vec<String>) -> BoxStream<Result<BrightnessDevice, brightness::Error>> {
+        if device_names.len() == 0 {
             brightness::brightness_devices().boxed()
         } else {
             brightness::brightness_devices()
                 .try_filter(|device| async {
                     device.device_name()
                     .await
-                    .is_ok_and(|devname| names.iter().any(|name|devname == *name))
+                    .is_ok_and(|devname| device_names.iter().any(|name|devname == *name))
                 })
                 .boxed()
         }
