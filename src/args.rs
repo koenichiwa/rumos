@@ -1,4 +1,4 @@
-use crate::{MIN_BRIGHTNESS, MAX_BRIGHTNESS};
+use crate::{MAX_BRIGHTNESS, MIN_BRIGHTNESS};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
@@ -13,51 +13,48 @@ pub struct Cli {
     pub percent: bool,
     #[command(subcommand)]
     pub command: ClapCommands,
-    #[arg(short, long, value_name = "DEVICES")] 
+    #[arg(short, long, value_name = "DEVICES")]
     /// Names of devices that should be changed
-    pub devices: Vec<String>
+    pub devices: Vec<String>,
 }
-
 
 #[derive(Debug, Subcommand)]
 pub enum ClapCommands {
     /// Get brightness level (in percent)
-    Get { 
+    Get {
         #[arg(short, long)]
-        devices: Vec<String>,
+        devices: Option<Vec<String>>,
     },
     /// Set brightness level (in percent)
-    Set { 
-        #[arg(value_parser = clap::value_parser!(u32).range(MIN_BRIGHTNESS as i64..=MAX_BRIGHTNESS as i64))] 
+    Set {
+        #[arg(value_parser = clap::value_parser!(u32).range(MIN_BRIGHTNESS as i64..=MAX_BRIGHTNESS as i64))]
         percent: u32,
         #[arg(short, long)]
-        devices: Vec<String>,
+        devices: Option<Vec<String>>,
     },
     /// Increase brightness level (in percent)
-    Inc { 
-        #[arg(value_parser = clap::value_parser!(u32).range(MIN_BRIGHTNESS as i64..=MAX_BRIGHTNESS as i64))] 
+    Inc {
+        #[arg(value_parser = clap::value_parser!(u32).range(MIN_BRIGHTNESS as i64..=MAX_BRIGHTNESS as i64))]
         percent: u32,
         #[arg(short, long)]
-        devices: Vec<String>,
+        devices: Option<Vec<String>>,
     },
     /// Decrease brightness level (in percent)
-    Dec { 
-        #[arg(value_parser = clap::value_parser!(u32).range(MIN_BRIGHTNESS as i64..=MAX_BRIGHTNESS as i64))] 
+    Dec {
+        #[arg(value_parser = clap::value_parser!(u32).range(MIN_BRIGHTNESS as i64..=MAX_BRIGHTNESS as i64))]
         percent: u32,
         #[arg(short, long)]
-        devices: Vec<String>,
+        devices: Option<Vec<String>>,
     },
     /// Set maximum brightness level
-    Max { 
+    Max {
         #[arg(short, long)]
-        devices: Vec<String>,
+        devices: Option<Vec<String>>,
     },
     /// Set mininum brightness level
-    Min { 
+    Min {
         #[arg(short, long)]
-        devices: Vec<String>,
+        devices: Option<Vec<String>>,
     },
     List,
 }
-
-
