@@ -1,4 +1,3 @@
-#![feature(async_closure)]
 mod args;
 mod funcs;
 
@@ -14,6 +13,7 @@ use crate::funcs::{BrightnessCommand, Command};
 
 const MAX_BRIGHTNESS: u32 = 100;
 const MIN_BRIGHTNESS: u32 = 5;
+const MAX_CONCURRENCY: Option<usize> = Some(5);
 
 fn get_selector(names: Option<Vec<String>>) -> DeviceSelector {
     if let Some(names) = names {
