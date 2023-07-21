@@ -31,6 +31,15 @@ pub enum DeviceSelector {
 
 impl Command {
     /// Handles the execution of a `Command`.
+    ///
+    /// # Arguments
+    ///
+    /// * `quiet`: If `true`, suppresses the printing of brightness levels after execution.
+    /// * `only_percent`: If `true`, only prints the brightness levels as percentages.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if the command is executed successfully. Otherwise, returns a `brightness::Error`.
     pub async fn handle(&self, quiet: bool, only_percent: bool) -> Result<(), brightness::Error> {
         match self {
             Command::BrightnessCommand { command, selector } => {
@@ -50,22 +59,38 @@ impl Command {
 
 impl BrightnessCommand {
     /// Handles the execution of the `BrightnessCommand` on a set of devices.
+    ///
+    /// # Arguments
+    ///
+    /// * `devices`: A stream of brightness devices on which the command will be executed.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if the command is executed successfully. Otherwise, returns a `brightness::Error`.
     pub async fn handle(
         &self,
         devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>,
     ) -> Result<(), brightness::Error> {
         match self {
             BrightnessCommand::Get => Ok(()),
-            BrightnessCommand::Set { percent } => set_brightness(devices, percent).await,
-            BrightnessCommand::Inc { percent } => increase_brightness(devices, percent).await,
-            BrightnessCommand::Dec { percent } => decrease_brightness(devices, percent).await,
-            BrightnessCommand::Max => set_brightness(devices, &MAX_BRIGHTNESS).await,
-            BrightnessCommand::Min => set_brightness(devices, &MIN_BRIGHTNESS).await,
+            BrightnessCommand::Set { percent } => set_brightness(devices, *percent).await,
+            BrightnessCommand::Inc { percent } => increase_brightness(devices, *percent).await,
+            BrightnessCommand::Dec { percent } => decrease_brightness(devices, *percent).await,
+            BrightnessCommand::Max => set_brightness(devices, MAX_BRIGHTNESS).await,
+            BrightnessCommand::Min => set_brightness(devices, MIN_BRIGHTNESS).await,
         }
     }
 }
 
 /// Retrieves a stream of brightness devices based on the provided device selector.
+///
+/// # Arguments
+///
+/// * `selector`: The device selector specifying which devices to retrieve.
+///
+/// # Returns
+///
+/// Returns a stream of brightness devices wrapped in a `BoxStream`.
 fn select_devices(
     selector: &DeviceSelector,
 ) -> BoxStream<Result<BrightnessDevice, brightness::Error>> {
@@ -96,6 +121,17 @@ fn select_devices(
     }
 }
 
+/// Adjusts the brightness of a stream of devices based on the provided adjust function.
+///
+/// # Arguments
+///
+/// * `devices`: The stream of devices
+/// * `percentage`: The percentage used for the change
+/// * `adjust_fn`: A function that takes the current brightness value and the `percentage` and returns the new brightness value 
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the command is executed successfully. Otherwise, returns a `brightness::Error`.
 async fn adjust_brightness<F>(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, percentage: u32, adjust_fn: Arc<F>) -> Result<(), brightness::Error>
 where
     F: Fn(u32, u32) -> u32 + Send + Sync,
@@ -108,10 +144,10 @@ where
                 let new_level = adjust_fn(current_level, percentage);
                 let new_level = if new_level < MIN_BRIGHTNESS {
                     MIN_BRIGHTNESS
-                } else if percentage > MAX_BRIGHTNESS {
+                } else if new_level > MAX_BRIGHTNESS {
                     MAX_BRIGHTNESS
                 } else {
-                    percentage
+                    new_level
                 };
                 device.set(new_level).await
             }
@@ -122,27 +158,28 @@ where
 /// Sets the brightness of multiple devices to the given percentage.
 async fn set_brightness(
     devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>,
-    percentage: &u32,
+    percentage: u32,
 ) -> Result<(), brightness::Error> {
-    adjust_brightness(devices, *percentage, Arc::new(|_, p| p)).await
+    adjust_brightness(devices, percentage, Arc::new(|_, p| p)).await
 }
 
 /// Increases the brightness of multiple devices by the given percentage.
 async fn increase_brightness(
     devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>,
-    percentage: &u32,
+    percentage: u32,
 ) -> Result<(), brightness::Error> {
-    adjust_brightness(devices, *percentage, Arc::new(|current, p| current + p)).await
+    adjust_brightness(devices, percentage, Arc::new(|current, p| current + p)).await
 }
 
 /// Decreases the brightness of multiple devices by the given percentage.
 async fn decrease_brightness(
     devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>,
-    percentage: &u32,
+    percentage: u32,
 ) -> Result<(), brightness::Error> {
-    adjust_brightness(devices, *percentage, Arc::new(|current: u32, p| current.saturating_sub(p))).await
+    adjust_brightness(devices, percentage, Arc::new(|current: u32, p| current.saturating_sub(p))).await
 }
 
+/// Helper function that prints the brightness of one device
 fn print_device_brightness(index: usize, name: &str, brightness: u32, percent: bool) {
     if percent {
         println!("{}", format!("{brightness}%").yellow().bold());
