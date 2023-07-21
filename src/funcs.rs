@@ -127,12 +127,16 @@ fn select_devices(
 ///
 /// * `devices`: The stream of devices
 /// * `percentage`: The percentage used for the change
-/// * `adjust_fn`: A function that takes the current brightness value and the `percentage` and returns the new brightness value 
+/// * `adjust_fn`: A function that takes the current brightness value and the `percentage` and returns the new brightness value
 ///
 /// # Returns
 ///
 /// Returns `Ok(())` if the command is executed successfully. Otherwise, returns a `brightness::Error`.
-async fn adjust_brightness<F>(devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>, percentage: u32, adjust_fn: Arc<F>) -> Result<(), brightness::Error>
+async fn adjust_brightness<F>(
+    devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>,
+    percentage: u32,
+    adjust_fn: Arc<F>,
+) -> Result<(), brightness::Error>
 where
     F: Fn(u32, u32) -> u32 + Send + Sync,
 {
@@ -168,7 +172,7 @@ async fn increase_brightness(
     devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>,
     percentage: u32,
 ) -> Result<(), brightness::Error> {
-    adjust_brightness(devices, percentage, Arc::new(|current, p| current + p)).await
+    adjust_brightness(devices, percentage, Arc::new(u32::saturating_add)).await
 }
 
 /// Decreases the brightness of multiple devices by the given percentage.
@@ -176,7 +180,12 @@ async fn decrease_brightness(
     devices: BoxStream<'_, Result<BrightnessDevice, brightness::Error>>,
     percentage: u32,
 ) -> Result<(), brightness::Error> {
-    adjust_brightness(devices, percentage, Arc::new(|current: u32, p| current.saturating_sub(p))).await
+    adjust_brightness(
+        devices,
+        percentage,
+        Arc::new(u32::saturating_sub),
+    )
+    .await
 }
 
 /// Helper function that prints the brightness of one device

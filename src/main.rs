@@ -5,11 +5,10 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use clap::Parser;
-use funcs::DeviceSelector;
 use futures::executor;
 
-use crate::args::{ClapCommands, Cli};
-use crate::funcs::{BrightnessCommand, Command};
+use crate::args::{Cli, Command as CliCommand};
+use crate::funcs::{BrightnessCommand, Command as FuncsCommand, DeviceSelector};
 
 const MAX_BRIGHTNESS: u32 = 100;
 const MIN_BRIGHTNESS: u32 = 5;
@@ -22,39 +21,39 @@ fn get_selector(names: Option<Vec<String>>) -> DeviceSelector {
     DeviceSelector::All
 }
 
-impl From<ClapCommands> for Command {
-    fn from(value: ClapCommands) -> Self {
+impl From<CliCommand> for FuncsCommand {
+    fn from(value: CliCommand) -> Self {
         match value {
-            ClapCommands::Get { devices } => Command::BrightnessCommand {
+            CliCommand::Get { devices } => FuncsCommand::BrightnessCommand {
                 command: BrightnessCommand::Get,
                 selector: get_selector(devices),
             },
-            ClapCommands::Set { percent, devices } => Command::BrightnessCommand {
+            CliCommand::Set { percent, devices } => FuncsCommand::BrightnessCommand {
                 command: BrightnessCommand::Set { percent },
                 selector: get_selector(devices),
             },
-            ClapCommands::Inc { percent, devices } => Command::BrightnessCommand {
+            CliCommand::Inc { percent, devices } => FuncsCommand::BrightnessCommand {
                 command: BrightnessCommand::Inc { percent },
                 selector: get_selector(devices),
             },
-            ClapCommands::Dec { percent, devices } => Command::BrightnessCommand {
+            CliCommand::Dec { percent, devices } => FuncsCommand::BrightnessCommand {
                 command: BrightnessCommand::Dec { percent },
                 selector: get_selector(devices),
             },
-            ClapCommands::Max { devices } => Command::BrightnessCommand {
+            CliCommand::Max { devices } => FuncsCommand::BrightnessCommand {
                 command: BrightnessCommand::Max,
                 selector: get_selector(devices),
             },
-            ClapCommands::Min { devices } => Command::BrightnessCommand {
+            CliCommand::Min { devices } => FuncsCommand::BrightnessCommand {
                 command: BrightnessCommand::Min,
                 selector: get_selector(devices),
             },
-            ClapCommands::List => Command::List,
+            CliCommand::List => FuncsCommand::List,
         }
     }
 }
 
 fn main() -> Result<(), brightness::Error> {
     let cli = Cli::parse();
-    executor::block_on(Command::from(cli.command).handle(cli.quiet, cli.percent))
+    executor::block_on(FuncsCommand::from(cli.command).handle(cli.quiet, cli.percent))
 }
