@@ -36,38 +36,47 @@ mod tests {
     #[test]
     fn set_max_brightness() -> TestResult {
         let mut cmd = Command::cargo_bin("rumos").unwrap();
-        let expected = "Maximum brightness level reached (100%)\n";
-        cmd.arg("max").assert().success().stdout(expected);
+        let expected = "Maximum brightness level reached";
+        cmd.arg("max")
+            .assert()
+            .success()
+            .stdout(predicate::str::contains(expected));
         Ok(())
     }
 
     #[test]
     fn set_min_brightness() -> TestResult {
         let mut cmd = Command::cargo_bin("rumos").unwrap();
-        let expected = "Minimum brightness level reached (5%)\n";
-        cmd.arg("min").assert().success().stdout(expected);
+        let expected = "Minimum brightness level reached";
+        cmd.arg("min")
+            .assert()
+            .success()
+            .stdout(predicate::str::contains(expected));
         Ok(())
     }
 
     #[test]
     fn decrease_brightness() -> TestResult {
-        let mut cmd = Command::cargo_bin("rumos").unwrap();
+        let expected = "40";
         set_brightness_for_test();
+        let mut cmd = Command::cargo_bin("rumos").unwrap();
         cmd.args(["dec", "10"])
             .assert()
             .success()
-            .stdout(predicate::str::contains("40"));
+            .stdout(predicate::str::contains(expected));
         Ok(())
     }
 
     #[test]
     fn increase_brightness() -> TestResult {
+        let expected = "60";
+        set_brightness_for_test();
         let mut cmd = Command::cargo_bin("rumos").unwrap();
         set_brightness_for_test();
         cmd.args(["inc", "10"])
             .assert()
             .success()
-            .stdout(predicate::str::contains("60"));
+            .stdout(predicate::str::contains(expected));
         Ok(())
     }
 
@@ -82,12 +91,12 @@ mod tests {
     #[test]
     fn percent_argument() -> TestResult {
         let mut cmd = Command::cargo_bin("rumos").unwrap();
-        let expected = "40%\n";
+        let expected = "\n40%\n";
         set_brightness_for_test();
         cmd.args(["-p", "dec", "10"])
             .assert()
             .success()
-            .stdout(expected);
+            .stdout(predicate::str::contains(expected));
         Ok(())
     }
 }

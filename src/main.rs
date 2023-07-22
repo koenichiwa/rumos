@@ -1,4 +1,5 @@
 mod args;
+mod error;
 mod funcs;
 
 use std::collections::HashSet;
@@ -7,53 +8,113 @@ use std::sync::Arc;
 use clap::Parser;
 use futures::executor;
 
-use crate::args::{Cli, Command as CliCommand};
-use crate::funcs::{BrightnessCommand, Command as FuncsCommand, DeviceSelector};
+use args::{
+    BrightnessOutput as CliBrightnessOutput, Cli, Command as CliCommand,
+    DeviceSelector as CliDeviceSelector,
+};
+pub use error::Error;
+use funcs::{
+    BrightnessCommand, BrightnessOutput as FuncsBrightnessOutput, Command as FuncsCommand,
+    DeviceSelector as FuncsDeviceSelector,
+};
 
 const MAX_BRIGHTNESS: u32 = 100;
 const MIN_BRIGHTNESS: u32 = 5;
 const MAX_CONCURRENCY: Option<usize> = Some(5);
 
-fn get_selector(names: Option<Vec<String>>) -> DeviceSelector {
-    if let Some(names) = names {
-        return DeviceSelector::ByName(Arc::<HashSet<String>>::new(names.into_iter().collect()));
+impl From<CliBrightnessOutput> for FuncsBrightnessOutput {
+    fn from(value: CliBrightnessOutput) -> Self {
+        match value {
+            CliBrightnessOutput {
+                quiet: false,
+                percent: false,
+            } => FuncsBrightnessOutput::Default,
+            CliBrightnessOutput {
+                quiet: true,
+                percent: false,
+            } => FuncsBrightnessOutput::Quiet,
+            CliBrightnessOutput {
+                quiet: false,
+                percent: true,
+            } => FuncsBrightnessOutput::Percent,
+            CliBrightnessOutput { .. } => unreachable!("The variables are mutually exclusive"),
+        }
     }
-    DeviceSelector::All
+}
+
+impl From<CliDeviceSelector> for FuncsDeviceSelector {
+    fn from(value: CliDeviceSelector) -> Self {
+        match value {
+            CliDeviceSelector {
+                devices: None,
+                indices: None,
+            } => FuncsDeviceSelector::All,
+            CliDeviceSelector {
+                devices: Some(devices),
+                indices: None,
+            } => FuncsDeviceSelector::ByName(Arc::<HashSet<String>>::new(
+                devices.into_iter().collect(),
+            )),
+            CliDeviceSelector {
+                devices: None,
+                indices: Some(indices),
+            } => FuncsDeviceSelector::ByIndex(indices.into_iter().collect()),
+            CliDeviceSelector { .. } => unreachable!("The variables are mutually exclusive"),
+        }
+    }
 }
 
 impl From<CliCommand> for FuncsCommand {
     fn from(value: CliCommand) -> Self {
         match value {
-            CliCommand::Get { devices } => FuncsCommand::BrightnessCommand {
+            CliCommand::Get { selector, output } => FuncsCommand::BrightnessCommand {
                 command: BrightnessCommand::Get,
-                selector: get_selector(devices),
+                selector: selector.into(),
+                output: output.into(),
             },
-            CliCommand::Set { percent, devices } => FuncsCommand::BrightnessCommand {
+            CliCommand::Set {
+                percent,
+                selector,
+                output,
+            } => FuncsCommand::BrightnessCommand {
                 command: BrightnessCommand::Set { percent },
-                selector: get_selector(devices),
+                selector: selector.into(),
+                output: output.into(),
             },
-            CliCommand::Inc { percent, devices } => FuncsCommand::BrightnessCommand {
+            CliCommand::Inc {
+                percent,
+                selector,
+                output,
+            } => FuncsCommand::BrightnessCommand {
                 command: BrightnessCommand::Inc { percent },
-                selector: get_selector(devices),
+                selector: selector.into(),
+                output: output.into(),
             },
-            CliCommand::Dec { percent, devices } => FuncsCommand::BrightnessCommand {
+            CliCommand::Dec {
+                percent,
+                selector,
+                output,
+            } => FuncsCommand::BrightnessCommand {
                 command: BrightnessCommand::Dec { percent },
-                selector: get_selector(devices),
+                selector: selector.into(),
+                output: output.into(),
             },
-            CliCommand::Max { devices } => FuncsCommand::BrightnessCommand {
+            CliCommand::Max { selector, output } => FuncsCommand::BrightnessCommand {
                 command: BrightnessCommand::Max,
-                selector: get_selector(devices),
+                selector: selector.into(),
+                output: output.into(),
             },
-            CliCommand::Min { devices } => FuncsCommand::BrightnessCommand {
+            CliCommand::Min { selector, output } => FuncsCommand::BrightnessCommand {
                 command: BrightnessCommand::Min,
-                selector: get_selector(devices),
+                selector: selector.into(),
+                output: output.into(),
             },
             CliCommand::List => FuncsCommand::List,
         }
     }
 }
 
-fn main() -> Result<(), brightness::Error> {
+fn main() -> Result<(), Error> {
     let cli = Cli::parse();
-    executor::block_on(FuncsCommand::from(cli.command).handle(cli.quiet, cli.percent))
+    executor::block_on(FuncsCommand::from(cli.command).handle())
 }
